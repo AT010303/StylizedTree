@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 import GUI from 'lil-gui';
 
 
@@ -8,6 +10,7 @@ import GridFragmentShader from './Shader/GridShader/fragment.glsl';
 
 import BushVertexShader from './Shader/Bush/vertex.glsl';
 import BushFragmentShader from './Shader/Bush/fragment.glsl';
+import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 
 /**
  * Base
@@ -53,29 +56,60 @@ scene.add(grid);
 /**
  * Geometry
  */
+
+const gltfLoader = new GLTFLoader();
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+gltfLoader.setDRACOLoader(dracoLoader);
+
+const BushEmitterModel = await gltfLoader.loadAsync(
+    './Models/BushEmitter.glb'
+);
+const emitterMesh = BushEmitterModel.scene.children[0];
+// emitterMesh.visible = false;
+// scene.add(emitterMesh);
+
+//Preparing geometry for surface sampling
+const samplerGeometry = emitterMesh.geometry.clone();
+samplerGeometry.applyMatrix4(emitterMesh.matrixWorld);
+samplerGeometry.deleteAttribute('normal'); //optional
+const nonIndexedGeometry = samplerGeometry.toNonIndexed();
+
+const tempMesh = new THREE.Mesh(
+    nonIndexedGeometry,
+    new THREE.MeshBasicMaterial()
+);
+
+const sampler = new MeshSurfaceSampler(tempMesh).build();
+
 // Geometry
+let count = 20;
+
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
 // Material
 const material = new THREE.ShaderMaterial({
     vertexShader: BushVertexShader,
     fragmentShader: BushFragmentShader,
+    transparent: true,
     side: THREE.DoubleSide
 });
 
 // Mesh
-const plane = new THREE.Mesh(planeGeometry, material);
+// const plane = new THREE.Mesh(planeGeometry, material);
 
-let count = 50;
 const instancedBush = new THREE.InstancedMesh(planeGeometry, material, count);
 scene.add(instancedBush);
 
 const dummy = new THREE.Object3D();
+const position = new THREE.Vector3();
+const normal = new THREE.Vector3();
+
 for (let i = 0; i < count; i++) {
-    dummy.position.set(
-        (Math.random() - 0.5) * 2,
-        (Math.random() - 0.5) * 2,
-        (Math.random() - 0.5) * 2
-    );
+    sampler.sample(position, normal);
+
+    dummy.position.copy(position);
+    dummy.position.addScaledVector(normal, 0.05);
+
     const scale = Math.random() * 0.5 + 0.5;
     dummy.scale.set(scale, scale, scale);
 
