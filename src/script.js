@@ -21,8 +21,8 @@ const pane = new Pane({
     title: 'Debug Pane'
 });
 const debugLight = {
-    azimuth: 45,       //left-right
-    elevation: 45      //up-down
+    azimuth: 160,       //left-right
+    elevation: 60      //up-down
 }
 
 pane.addBinding(
@@ -85,7 +85,7 @@ const gridPlane = new THREE.Mesh(
     GridMaterial
 );
 gridPlane.rotation.x = - Math.PI * 0.5;
-// scene.add(gridPlane);
+scene.add(gridPlane);
 
 const grid = new THREE.GridHelper(
   200,   // size
@@ -93,7 +93,7 @@ const grid = new THREE.GridHelper(
   0x000000, // center line color
   0xcccccc  // grid line color
 );
-// scene.add(grid);
+scene.add(grid);
 
 /**
  * Geometry
