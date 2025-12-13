@@ -6,6 +6,9 @@ import GUI from 'lil-gui';
 import GridVertexShader from './Shader/GridShader/vertex.glsl';
 import GridFragmentShader from './Shader/GridShader/fragment.glsl';
 
+import BushVertexShader from './Shader/Bush/vertex.glsl';
+import BushFragmentShader from './Shader/Bush/fragment.glsl';
+
 /**
  * Base
  */
@@ -17,7 +20,7 @@ const canvas = document.querySelector('canvas.webgl');
 
 // Scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#ffffffff");
+scene.background = new THREE.Color("#ffffff");
 
 //Grid
 const GridMaterial = new THREE.ShaderMaterial({
@@ -53,11 +56,35 @@ scene.add(grid);
 // Geometry
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
 // Material
-const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const material = new THREE.ShaderMaterial({
+    vertexShader: BushVertexShader,
+    fragmentShader: BushFragmentShader,
+    side: THREE.DoubleSide
+});
 
 // Mesh
 const plane = new THREE.Mesh(planeGeometry, material);
-scene.add(plane);
+
+let count = 50;
+const instancedBush = new THREE.InstancedMesh(planeGeometry, material, count);
+scene.add(instancedBush);
+
+const dummy = new THREE.Object3D();
+for (let i = 0; i < count; i++) {
+    dummy.position.set(
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2
+    );
+    const scale = Math.random() * 0.5 + 0.5;
+    dummy.scale.set(scale, scale, scale);
+
+    dummy.updateMatrix();
+    instancedBush.setMatrixAt(i, dummy.matrix);
+
+}
+
+instancedBush.instanceMatrix.needsUpdate = true;
 
 /**
  * Sizes
