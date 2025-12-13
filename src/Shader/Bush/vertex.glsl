@@ -1,3 +1,7 @@
+attribute vec3 instanceNormal;
+
+varying vec3 vInstanceNormal;
+
 void main(){
 
     mat4 m = modelMatrix;
@@ -30,5 +34,9 @@ void main(){
         + (cameraRight * position.x * scaleX)
         + (cameraUp * position.y * scaleY);
 
+
     gl_Position = projectionMatrix * viewMatrix * vec4(billboardVertexPosition, 1.0);
+
+    vInstanceNormal = instanceNormal;
+
 }
