@@ -37,7 +37,7 @@ void main(){
     vec3 light = vec3(0.0);
     light += ambientLight(
         vec3(1.0), // light color
-        0.2            // light intensity
+        0.3           // light intensity
     );
     color += uMidColor * light;       // adding because we dont want BSDF like material effect 
     // for real lighing we would multiply but we want to keep it stylized so we add

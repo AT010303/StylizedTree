@@ -112,6 +112,19 @@ const grid = new THREE.GridHelper(
 );
 scene.add(grid);
 
+//land
+const landGeometry = new THREE.PlaneGeometry(200, 200);
+const landMaterial = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#ffffffff"),
+    roughness: 1.0,
+    metalness: 0.0
+});
+const landMesh = new THREE.Mesh(landGeometry, landMaterial);
+landMesh.rotation.x = - Math.PI * 0.5;
+landMesh.position.y = -0.01;
+landMesh.receiveShadow = true;
+scene.add(landMesh);
+
 /**
  * Geometry
  */
@@ -207,6 +220,35 @@ instancedBush.geometry.setAttribute(
 
 instancedBush.instanceMatrix.needsUpdate = true;
 
+
+//Branches
+const tree = await gltfLoader.loadAsync(
+    './Models/Branchescmp.glb'
+);
+const treeMesh = tree.scene.children[0];
+const treeMaterial = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#4a3018"),
+    roughness: 1.0,
+    metalness: 0.0
+});
+treeMesh.material = treeMaterial;
+treeMesh.castShadow = true;
+treeMesh.scale.set(0.15, 0.15, 0.15);
+treeMesh.position.y = 0.0;
+treeMesh.position.x = 0.0;
+scene.add(treeMesh);
+// console.log(treeMaterial);
+
+
+//lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
+directionalLight.position.set(-15, 10, 7);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.set(2048, 2048);
+scene.add(directionalLight);
+
 /**
  * Sizes
  */
@@ -235,7 +277,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
-camera.position.set(0, 0, 5);
+camera.position.set(0, 5, 10);
 scene.add(camera);
 
 function updateGrid(camera) {
@@ -246,6 +288,7 @@ function updateGrid(camera) {
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
+controls.target.set(0, 5, 0);
 
 /**
  * Renderer
@@ -255,6 +298,9 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 
 /**
  * Animate
