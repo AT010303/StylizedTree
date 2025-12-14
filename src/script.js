@@ -30,9 +30,9 @@ const treeRotation = {
 }
 
 const bushColor = {
-    shadow : '#164e51',
-    mid: '#41ab4f',
-    highlight: '#94c600'
+    shadow : '#1a223c',
+    mid: '#45a2a6',
+    highlight: '#bbe96e'
 };
 
 pane.addBinding(
@@ -184,9 +184,9 @@ const material = new THREE.ShaderMaterial({
     uniforms: {
         uLightDirection : new THREE.Uniform(lightDirection),
         uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
-        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
-        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
-        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight)),
+        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow).convertSRGBToLinear()),
+        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid).convertSRGBToLinear()),
+        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight).convertSRGBToLinear()),
     },
     vertexShader: BushVertexShader,
     fragmentShader: BushFragmentShader,
@@ -196,9 +196,9 @@ const material = new THREE.ShaderMaterial({
 });
 
 pane.on('change', ()=> {
-    material.uniforms.uShadowColor.value.set(bushColor.shadow);
-    material.uniforms.uMidColor.value.set(bushColor.mid);
-    material.uniforms.uHighlightColor.value.set(bushColor.highlight);
+    material.uniforms.uShadowColor.value.set(bushColor.shadow).convertSRGBToLinear();
+    material.uniforms.uMidColor.value.set(bushColor.mid).convertSRGBToLinear();
+    material.uniforms.uHighlightColor.value.set(bushColor.highlight).convertSRGBToLinear();
 })
 
 
