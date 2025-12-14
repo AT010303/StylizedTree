@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
+import { TextureLoader } from 'three/src/loaders/TextureLoader.js';
 import { Pane } from 'tweakpane';
 
 
@@ -23,7 +24,13 @@ const pane = new Pane({
 const debugLight = {
     azimuth: 160,       //left-right
     elevation: 60      //up-down
-}
+};
+
+const bushColor = {
+    shadow : '#164e51',
+    mid: '#41ab4f',
+    highlight: '#94c600'
+};
 
 pane.addBinding(
     debugLight, 'azimuth', {
@@ -41,6 +48,16 @@ pane.addBinding(
         step: 1,
         label: 'Light Elevation (Up-Down)'
     }
+);
+
+pane.addBinding(
+    bushColor, 'shadow'
+);
+pane.addBinding(
+    bushColor, 'mid'
+);
+pane.addBinding(
+    bushColor, 'highlight'
 );
 
 const lightDirection = new THREE.Vector3();
@@ -124,19 +141,35 @@ const tempMesh = new THREE.Mesh(
 const sampler = new MeshSurfaceSampler(tempMesh).build();
 
 // Geometry
-let count = 20;
+let count = 25;
 
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
 // Material
+const textureLoader = new TextureLoader();
+const leaveAlphaTexture = await textureLoader.loadAsync('./Textures/Leave_alpha.png');
+
 const material = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.DoubleSide,
     uniforms: {
-        uLightDirection : new THREE.Uniform(lightDirection)
+        uLightDirection : new THREE.Uniform(lightDirection),
+        uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
+        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
+        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
+        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight)),
     },
     vertexShader: BushVertexShader,
     fragmentShader: BushFragmentShader,
+    depthTest: true,
+    depthWrite: true,
+    transparent: false,
 });
+
+pane.on('change', ()=> {
+    material.uniforms.uShadowColor.value.set(bushColor.shadow);
+    material.uniforms.uMidColor.value.set(bushColor.mid);
+    material.uniforms.uHighlightColor.value.set(bushColor.highlight);
+})
 
 // Instanced Mesh
 const instancedBush = new THREE.InstancedMesh(planeGeometry, material, count);
@@ -202,7 +235,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
-camera.position.set(2, 2, 2);
+camera.position.set(0, 0, 5);
 scene.add(camera);
 
 function updateGrid(camera) {

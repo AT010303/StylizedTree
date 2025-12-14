@@ -1,6 +1,7 @@
 attribute vec3 instanceNormal;
 
 varying vec3 vInstanceNormal;
+varying vec2 vUv;
 
 void main(){
 
@@ -38,5 +39,6 @@ void main(){
     gl_Position = projectionMatrix * viewMatrix * vec4(billboardVertexPosition, 1.0);
 
     vInstanceNormal = instanceNormal;
+    vUv = uv;
 
 }
