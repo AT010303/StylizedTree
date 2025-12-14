@@ -26,6 +26,10 @@ const debugLight = {
     elevation: 60      //up-down
 };
 
+const treeRotation = {
+    rotation : 4.75
+}
+
 const bushColor = {
     shadow : '#164e51',
     mid: '#41ab4f',
@@ -58,6 +62,15 @@ pane.addBinding(
 );
 pane.addBinding(
     bushColor, 'highlight'
+);
+
+pane.addBinding(
+    treeRotation, 'rotation', {
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        label: 'Tree Rotation'
+    }
 );
 
 const lightDirection = new THREE.Vector3();
@@ -117,7 +130,8 @@ const landGeometry = new THREE.PlaneGeometry(200, 200);
 const landMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#ffffffff"),
     roughness: 1.0,
-    metalness: 0.0
+    metalness: 0.0,
+    side: THREE.DoubleSide
 });
 const landMesh = new THREE.Mesh(landGeometry, landMaterial);
 landMesh.rotation.x = - Math.PI * 0.5;
@@ -236,6 +250,7 @@ treeMesh.castShadow = true;
 treeMesh.scale.set(0.15, 0.15, 0.15);
 treeMesh.position.y = 0.0;
 treeMesh.position.x = 0.0;
+treeMesh.rotation.y = treeRotation.rotation;
 scene.add(treeMesh);
 // console.log(treeMaterial);
 
@@ -314,6 +329,7 @@ const tick = () =>
     updateLightDirection();
     material.uniforms.uLightDirection.value.copy(lightDirection);
 
+    treeMesh.rotation.y = treeRotation.rotation;
 
     // Update controls
     controls.update();
