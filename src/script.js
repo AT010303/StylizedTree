@@ -21,8 +21,8 @@ const pane = new Pane({
     title: 'Debug Pane'
 });
 const debugLight = {
-    azimuth: 160,       //left-right
-    elevation: 60      //up-down
+    azimuth: 120,       //left-right
+    elevation: 60     //up-down
 };
 
 const treeRotation = {
@@ -159,7 +159,16 @@ const tempMesh = new THREE.Mesh(
     new THREE.MeshBasicMaterial()
 );
 
-const sampler = new MeshSurfaceSampler(tempMesh).build();
+const mulberry32 = (seed) => {
+    return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+const sampler = new MeshSurfaceSampler(tempMesh).setRandomGenerator(mulberry32(12345)).build();
 
 // Geometry
 let count = 25;
@@ -236,6 +245,8 @@ const createBush = ({
     scene.add(instancedBush);
     return instancedBush;
 }
+//Dummy bush for testing shaders
+// createBush({ position: new THREE.Vector3( 0, 2,  0.00), leafCount: 25, scale: 1.5});
 
 createBush({ position: new THREE.Vector3( 1.25, 2.25,  0.00), leafCount: 15, scale: 1.0});
 createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.20), leafCount: 25, scale: 0.8});
@@ -311,8 +322,8 @@ window.addEventListener('resize', () =>
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500);
-camera.position.set(0, 5, 15);
+const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.01, 1000);
+camera.position.set(0, 5, 30);
 scene.add(camera);
 
 function updateGrid(camera) {
@@ -323,6 +334,8 @@ function updateGrid(camera) {
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
+controls.minDistance = 25;
+controls.maxDistance = 45;
 controls.target.set(0, 5, 0);
 
 /**

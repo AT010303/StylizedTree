@@ -1,5 +1,6 @@
 varying vec3 vInstanceNormal;
 varying vec2 vUv;
+varying vec3 vWorldPosition;
 
 uniform vec3 uLightDirection;
 uniform sampler2D uAlphaMap;
@@ -30,17 +31,36 @@ void main(){
     vec3 surfaceNormal = normalize(vInstanceNormal);
     vec3 directionalLightDirection = normalize(uLightDirection);
     float ndl = dot(surfaceNormal, directionalLightDirection); // dot of normal and light direction
+    // ndl = ndl * 0.5 + 0.5; // remap from [-1.0, 1.0] to [0.0, 1.0]
     ndl = clamp(ndl * 0.6 + 0.4, 0.0, 1.0);  // remap [-1.0, 1.0] to [0.4, 1.0] range so nothing is pitch black
 
-    vec3 color = colorRamp(ndl);
+    // vec3 color = colorRamp(vWorldPosition.z * ndl);
+
+    // vWorldPosition = vWorldPosition * ndl;
+
+    float worldz = clamp((vWorldPosition.z + 2.0)/4.0, 0.0, 1.0);
+    float worldx = clamp((vWorldPosition.x + 3.0)/6.0, 0.0, 1.0);
+    worldx = 1.0 - worldx;
+    float worldy = clamp(vWorldPosition.y/10.0, 0.0, 1.0);
+    
+    float worldPositionNormalized = (worldy + worldx + worldz )/3.0;
+
+
+
+    vec3 color1 = colorRamp(worldPositionNormalized);
+    vec3 color2 = colorRamp(ndl);
+    // vec3 color = mix(color1, color2, worldPositionNormalized);
+    vec3 color = vec3(worldPositionNormalized-0.25 + ndl+0.25)/1.25;
+    color = colorRamp(color.x);
+
 
     vec3 light = vec3(0.0);
     light += ambientLight(
         vec3(1.0), // light color
-        0.3           // light intensity
+        1.0          // light intensity
     );
-    color += uMidColor * light;       // adding because we dont want BSDF like material effect 
-    // for real lighing we would multiply but we want to keep it stylized so we add
+    color *= light;
+    
 
     gl_FragColor = vec4(color, 1.0);
 

@@ -2,6 +2,7 @@ attribute vec3 instanceNormal;
 
 varying vec3 vInstanceNormal;
 varying vec2 vUv;
+varying vec3 vWorldPosition;
 
 void main(){
 
@@ -40,5 +41,6 @@ void main(){
 
     vInstanceNormal = instanceNormal;
     vUv = uv;
+    vWorldPosition = billboardVertexPosition;
 
 }
