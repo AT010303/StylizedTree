@@ -6,7 +6,6 @@ import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 import { TextureLoader } from 'three/src/loaders/TextureLoader.js';
 import { Pane } from 'tweakpane';
 
-
 import GridVertexShader from './Shader/GridShader/vertex.glsl';
 import GridFragmentShader from './Shader/GridShader/fragment.glsl';
 
@@ -128,7 +127,7 @@ scene.add(grid);
 //land
 const landGeometry = new THREE.PlaneGeometry(200, 200);
 const landMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#ffffffff"),
+    color: new THREE.Color("#ffffff"),
     roughness: 1.0,
     metalness: 0.0,
     side: THREE.DoubleSide
@@ -139,9 +138,6 @@ landMesh.position.y = -0.01;
 landMesh.receiveShadow = true;
 scene.add(landMesh);
 
-/**
- * Geometry
- */
 
 const gltfLoader = new GLTFLoader();
 const dracoLoader = new DRACOLoader();
@@ -152,8 +148,6 @@ const BushEmitterModel = await gltfLoader.loadAsync(
     './Models/BushEmittercmp.glb'
 );
 const emitterMesh = BushEmitterModel.scene.children[0];
-// emitterMesh.visible = false;
-// scene.add(emitterMesh);
 
 //Preparing geometry for surface sampling
 const samplerGeometry = emitterMesh.geometry.clone();
@@ -198,41 +192,67 @@ pane.on('change', ()=> {
     material.uniforms.uHighlightColor.value.set(bushColor.highlight);
 })
 
-// Instanced Mesh
-const instancedBush = new THREE.InstancedMesh(planeGeometry, material, count);
-scene.add(instancedBush);
 
-const dummy = new THREE.Object3D();
-const position = new THREE.Vector3();
-const normal = new THREE.Vector3();
-console.log(sampler);
+const createBush = ({
+    position = new THREE.Vector3(),
+    leafCount = 25,
+    scale = 1.0
+}) => {
 
-const instanceNormals = new Float32Array(count * 3);
+    const instancedBush = new THREE.InstancedMesh(
+        planeGeometry, 
+        material, 
+        leafCount
+    );
 
+    instancedBush.position.copy(position);
+    // instancedBush.castShadow = true;
 
-for (let i = 0; i < count; i++) {
-    sampler.sample(position, normal);
+    const instanceNormals = new Float32Array(count * 3);
+    const dummy = new THREE.Object3D();
+    const positionL = new THREE.Vector3();
+    const normal = new THREE.Vector3();
 
-    instanceNormals[i * 3 + 0] = normal.x;
-    instanceNormals[i * 3 + 1] = normal.y;
-    instanceNormals[i * 3 + 2] = normal.z;
+    for(let i=0; i<leafCount; i++){
+        sampler.sample(positionL, normal);
 
-    dummy.position.copy(position);
-    const scale = Math.random() * 0.5 + 1.0;
-    dummy.scale.set(scale, scale, scale);
+        dummy.position.copy(positionL).add(position);
+        const s = Math.random() * 0.5 + scale;
+        dummy.scale.set(s, s, s);
 
-    dummy.updateMatrix();
-    instancedBush.setMatrixAt(i, dummy.matrix);
+        dummy.updateMatrix();
+        instancedBush.setMatrixAt(i, dummy.matrix);
 
+        instanceNormals[i * 3 + 0] = normal.x;
+        instanceNormals[i * 3 + 1] = normal.y;
+        instanceNormals[i * 3 + 2] = normal.z;
+    }
+
+    instancedBush.geometry.setAttribute(
+        'instanceNormal',
+        new THREE.InstancedBufferAttribute(instanceNormals, 3)
+    );
+    instancedBush.instanceMatrix.needsUpdate = true;
+    scene.add(instancedBush);
+    return instancedBush;
 }
 
-//attaching the instance normals as an attribute
-instancedBush.geometry.setAttribute(
-    'instanceNormal',
-    new THREE.InstancedBufferAttribute(instanceNormals, 3)
-);
+createBush({ position: new THREE.Vector3( 1.25, 2.25,  0.00), leafCount: 15, scale: 1.0});
+createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.20), leafCount: 25, scale: 0.8});
+createBush({ position: new THREE.Vector3( 0.25, 3.00,  0.00), leafCount: 20, scale: 1.2});
+createBush({ position: new THREE.Vector3(-1.00, 4.00,  1.00), leafCount: 30, scale: 1.0});
+createBush({ position: new THREE.Vector3( 1.00, 4.00,  0.00), leafCount: 20, scale: 0.8});
+createBush({ position: new THREE.Vector3( 2.00, 4.00, -0.50), leafCount: 25, scale: 1.0});
+createBush({ position: new THREE.Vector3(-2.00, 4.00,  0.50), leafCount: 25, scale: 1.2});
+createBush({ position: new THREE.Vector3(-1.00, 5.00, -0.50), leafCount: 10, scale: 1.0});
+createBush({ position: new THREE.Vector3( 1.00, 5.00,  0.50), leafCount: 20, scale: 0.6});
+createBush({ position: new THREE.Vector3( 0.00, 6.00,  0.50), leafCount: 15, scale: 1.0});
+createBush({ position: new THREE.Vector3( 1.50, 6.00,  0.50), leafCount: 20, scale: 0.8});
+createBush({ position: new THREE.Vector3(-1.50, 6.00,  0.50), leafCount: 15, scale: 1.0});
+createBush({ position: new THREE.Vector3( 0.50, 7.00,  0.50), leafCount: 15, scale: 0.7});
+createBush({ position: new THREE.Vector3(-0.50, 7.00, -0.50), leafCount: 10, scale: 0.7});
+createBush({ position: new THREE.Vector3( 0.00, 8.00,  0.50), leafCount: 15, scale: 1.0});
 
-instancedBush.instanceMatrix.needsUpdate = true;
 
 
 //Branches
@@ -248,7 +268,7 @@ const treeMaterial = new THREE.MeshStandardMaterial({
 treeMesh.material = treeMaterial;
 treeMesh.castShadow = true;
 treeMesh.scale.set(0.15, 0.15, 0.15);
-treeMesh.position.y = 0.0;
+treeMesh.position.y = 0.125;
 treeMesh.position.x = 0.0;
 treeMesh.rotation.y = treeRotation.rotation;
 scene.add(treeMesh);
@@ -291,8 +311,8 @@ window.addEventListener('resize', () =>
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
-camera.position.set(0, 5, 10);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500);
+camera.position.set(0, 5, 15);
 scene.add(camera);
 
 function updateGrid(camera) {
