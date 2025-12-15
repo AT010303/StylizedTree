@@ -445,7 +445,7 @@ function updateGrid(camera) {
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.minDistance = 25;
-controls.maxDistance = 45;
+controls.maxDistance = 100;
 controls.target.set(0, 5, 0);
 
 /**
