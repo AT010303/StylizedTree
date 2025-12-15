@@ -1,3 +1,5 @@
+precision highp float;
+
 varying vec3 vInstanceNormal;
 varying vec2 vUv;
 varying vec3 vWorldPosition;
