@@ -18,8 +18,7 @@ import BushFragmentShader from './Shader/Bush/fragment.glsl';
  */
 // Debug
 const pane = new Pane({
-    title: 'Debug Pane',
-    expanded: false
+    title: 'Debug Pane'
 });
 
 const bushLight = pane.addFolder({
@@ -34,6 +33,7 @@ const bushWind = pane.addFolder({
 
 const treeBark = pane.addFolder({
     title: 'Tree Bark',
+    expanded: false
 });
 
 const debugLight = {
@@ -256,7 +256,6 @@ const textureLoader = new TextureLoader();
 const leaveAlphaTexture = await textureLoader.loadAsync('./Textures/Leave_alpha.png');
 
 const material = new THREE.ShaderMaterial({
-    transparent: true,
     side: THREE.DoubleSide,
     uniforms: {
         uTime: new THREE.Uniform(0.0),
@@ -341,6 +340,8 @@ const createBush = ({
         new THREE.InstancedBufferAttribute(instanceNormals, 3)
     );
     instancedBush.instanceMatrix.needsUpdate = true;
+    instancedBush.castShadow = true;
+    instancedBush.receiveShadow = true;
     scene.add(instancedBush);
     return instancedBush;
 }
@@ -382,16 +383,26 @@ treeMesh.position.y = 0.125;
 treeMesh.position.x = 0.0;
 treeMesh.rotation.y = treeRotation.rotation;
 scene.add(treeMesh);
-// console.log(treeMaterial);
 
 
 //lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
-directionalLight.position.set(-15, 10, 7);
+directionalLight.position.set(-15, 15, 7);
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.set(2048, 2048);
+
+const d = 50;
+directionalLight.shadow.camera.left = -d;
+directionalLight.shadow.camera.right = d;
+directionalLight.shadow.camera.top = d;
+directionalLight.shadow.camera.bottom = -d;
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 100;
+directionalLight.shadow.bias = -0.0001;
+directionalLight.shadow.normalBias = 0.03;
+
 scene.add(directionalLight);
 
 /**
@@ -446,7 +457,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.VSMShadowMap;
 
 
 /**
