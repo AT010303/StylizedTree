@@ -18,8 +18,24 @@ import BushFragmentShader from './Shader/Bush/fragment.glsl';
  */
 // Debug
 const pane = new Pane({
-    title: 'Debug Pane'
+    title: 'Debug Pane',
+    expanded: false
 });
+
+const bushLight = pane.addFolder({
+    title: 'Bush Light & Color',
+    expanded: false
+})
+
+const bushWind = pane.addFolder({
+    title: 'Bush Wind',
+    expanded: false
+});
+
+const treeBark = pane.addFolder({
+    title: 'Tree Bark',
+});
+
 const debugLight = {
     azimuth: 120,       //left-right
     elevation: 60     //up-down
@@ -35,7 +51,7 @@ const bushColor = {
     highlight: '#bbe96e'
 };
 
-pane.addBinding(
+bushLight.addBinding(
     debugLight, 'azimuth', {
         min: -180,
         max: 180,
@@ -44,7 +60,7 @@ pane.addBinding(
     }
 );
 
-pane.addBinding(
+bushLight.addBinding(
     debugLight, 'elevation', {
         min: 0,
         max: 90,
@@ -53,17 +69,78 @@ pane.addBinding(
     }
 );
 
-pane.addBinding(
+const bushWindParams = {
+    smallWindSpeed: 0.25,
+    smallWindScale: 10.0,
+    smallWindStrength: 1.5,
+    largeWindSpeed: 0.2,
+    largeWindScale: 2.5,
+    largeWindStrength: 0.5
+};
+
+bushWind.addBinding(
+    bushWindParams, 'smallWindSpeed', {
+        min: 0.0,
+        max: 1.0,
+        step: 0.01,
+        label: 'Small Wind Speed'
+    }
+);
+bushWind.addBinding(
+    bushWindParams, 'smallWindScale', {
+        min: 0.0,
+        max: 20.0,
+        step: 0.1,
+        label: 'Small Wind Scale'
+    }
+);
+
+bushWind.addBinding(
+    bushWindParams, 'smallWindStrength', {
+        min: 0.0,
+        max: 5.0,
+        step: 0.1,
+        label: 'Small Wind Strength'
+    }
+);
+
+bushWind.addBinding(
+    bushWindParams, 'largeWindSpeed', {
+        min: 0.0,
+        max: 1.0,
+        step: 0.01,
+        label: 'Large Wind Speed'
+    }
+);
+bushWind.addBinding(
+    bushWindParams, 'largeWindScale', {
+        min: 0.0,
+        max: 5.0,
+        step: 0.1,
+        label: 'Large Wind Scale'
+    }
+);
+
+bushWind.addBinding(
+    bushWindParams, 'largeWindStrength', {
+        min: 0.0,
+        max: 2.0,
+        step: 0.1,
+        label: 'Large Wind Strength'
+    }
+);
+
+bushLight.addBinding(
     bushColor, 'shadow'
 );
-pane.addBinding(
+bushLight.addBinding(
     bushColor, 'mid'
 );
-pane.addBinding(
+bushLight.addBinding(
     bushColor, 'highlight'
 );
 
-pane.addBinding(
+treeBark.addBinding(
     treeRotation, 'rotation', {
         min: 0,
         max: Math.PI * 2,
@@ -182,11 +259,20 @@ const material = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.DoubleSide,
     uniforms: {
+        uTime: new THREE.Uniform(0.0),
         uLightDirection : new THREE.Uniform(lightDirection),
         uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
         uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow).convertSRGBToLinear()),
         uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid).convertSRGBToLinear()),
         uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight).convertSRGBToLinear()),
+
+        uSmallWindSpeed: new THREE.Uniform(bushWindParams.smallWindSpeed),
+        uSmallWindScale: new THREE.Uniform(bushWindParams.smallWindScale),
+        uSmallWindStrength: new THREE.Uniform(bushWindParams.smallWindStrength),
+
+        uLargeWindSpeed: new THREE.Uniform(bushWindParams.largeWindSpeed),
+        uLargeWindScale: new THREE.Uniform(bushWindParams.largeWindScale),
+        uLargeWindStrength: new THREE.Uniform(bushWindParams.largeWindStrength),
     },
     vertexShader: BushVertexShader,
     fragmentShader: BushFragmentShader,
@@ -195,11 +281,24 @@ const material = new THREE.ShaderMaterial({
     transparent: false,
 });
 
-pane.on('change', ()=> {
+
+bushLight.on('change', ()=> {
     material.uniforms.uShadowColor.value.set(bushColor.shadow).convertSRGBToLinear();
     material.uniforms.uMidColor.value.set(bushColor.mid).convertSRGBToLinear();
     material.uniforms.uHighlightColor.value.set(bushColor.highlight).convertSRGBToLinear();
 })
+
+bushWind.on('change', ()=> {
+    material.uniforms.uSmallWindSpeed.value = bushWindParams.smallWindSpeed;
+    material.uniforms.uSmallWindScale.value = bushWindParams.smallWindScale;
+    material.uniforms.uSmallWindStrength.value = bushWindParams.smallWindStrength;
+
+    material.uniforms.uLargeWindSpeed.value = bushWindParams.largeWindSpeed;
+    material.uniforms.uLargeWindScale.value = bushWindParams.largeWindScale;
+    material.uniforms.uLargeWindStrength.value = bushWindParams.largeWindStrength;
+});
+
+
 
 
 const createBush = ({
@@ -361,6 +460,7 @@ const tick = () =>
 
     updateLightDirection();
     material.uniforms.uLightDirection.value.copy(lightDirection);
+    material.uniforms.uTime.value = elapsedTime;
 
     treeMesh.rotation.y = treeRotation.rotation;
 
