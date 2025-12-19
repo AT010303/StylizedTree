@@ -479,10 +479,11 @@ controls.enableDamping = true;
 controls.minDistance = 25;
 controls.maxDistance = 100;
 controls.target.set(0, 5, 0);
+controls.panSpeed = 0.0
 
 /**
  * Renderer
- */
+ */ 
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 });
