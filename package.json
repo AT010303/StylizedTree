@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "lil-gui": "^0.20.0",
-    "postprocessing": "^6.38.0",
     "stats.js": "^0.17.0",
     "three": "^0.182.0",
     "tweakpane": "^4.0.5"
