@@ -422,7 +422,8 @@ scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
 directionalLight.position.set(-15, 15, 7);
 directionalLight.castShadow = true;
-directionalLight.shadow.mapSize.set(2048, 2048);
+directionalLight.shadow.radius = 15;
+directionalLight.shadow.mapSize.set(1024, 1024);
 
 const d = 50;
 directionalLight.shadow.camera.left = -d;
