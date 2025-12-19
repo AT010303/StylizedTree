@@ -6,11 +6,20 @@ import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 import { TextureLoader } from 'three/src/loaders/TextureLoader.js';
 import { Pane } from 'tweakpane';
 
+import Stats from 'stats.js';
+
+import { FallingLeavesSystem } from './leaf.js';
+
 import GridVertexShader from './Shader/GridShader/vertex.glsl';
 import GridFragmentShader from './Shader/GridShader/fragment.glsl';
 
 import BushVertexShader from './Shader/Bush/vertex.glsl';
 import BushFragmentShader from './Shader/Bush/fragment.glsl';
+import { Loader } from 'three';
+
+const stats = new Stats()
+stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom)
 
 
 /**
@@ -366,6 +375,28 @@ createBush({ position: new THREE.Vector3( 0.00, 8.00,  0.50), leafCount: 15, sca
 
 
 
+//leafs
+const treeBounds = {
+    yMin: 1.0,
+    yMax: 7.5,   // The highest bush is around
+    xRange: 6.0, // Spans from -3 to 3 roughly
+    zRange: 2.0
+};
+
+const leaf = await gltfLoader.loadAsync(
+    './Models/leaf.glb'
+);
+const leafGeometry = leaf.scene.children[0].geometry;
+leafGeometry.scale(0.07, 0.07, 0.07);
+
+
+const fallingLeaves = new FallingLeavesSystem(
+    scene,  
+    leafGeometry,
+    treeBounds
+);
+
+
 //Branches
 const tree = await gltfLoader.loadAsync(
     './Models/Branchescmp.glb'
@@ -467,6 +498,7 @@ const clock = new THREE.Clock();
 
 const tick = () =>
 {
+    stats.begin();
     const elapsedTime = clock.getElapsedTime();
 
     updateLightDirection();
@@ -474,6 +506,8 @@ const tick = () =>
     material.uniforms.uTime.value = elapsedTime;
 
     treeMesh.rotation.y = treeRotation.rotation;
+
+    if(fallingLeaves) fallingLeaves.update(0.01); // Fixed timestep for leafe scale consistency
 
     // Update controls
     controls.update();
@@ -484,6 +518,7 @@ const tick = () =>
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick);
+    stats.end();
 };
 
 tick();
