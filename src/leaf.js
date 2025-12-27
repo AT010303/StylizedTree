@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 
 export class FallingLeavesSystem {
-    constructor(scene, geometry, bounds) {
+    constructor(scene, geometry, bounds, color) {
         this.count = 20; // density
         this.scene = scene;
         this.bounds = bounds; // leaves spawn area {yMin, yMax, xRange, zRange}
         
 
         this.material = new THREE.MeshStandardMaterial({
-            color: new THREE.Color(0x7eb325),
+            color: new THREE.Color(color),
         });
 
         this.mesh = new THREE.InstancedMesh(geometry, this.material, this.count);

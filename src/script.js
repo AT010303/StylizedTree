@@ -10,12 +10,8 @@ import Stats from 'stats.js';
 
 import { FallingLeavesSystem } from './leaf.js';
 
-import GridVertexShader from './Shader/GridShader/vertex.glsl';
-import GridFragmentShader from './Shader/GridShader/fragment.glsl';
-
 import BushVertexShader from './Shader/Bush/vertex.glsl';
 import BushFragmentShader from './Shader/Bush/fragment.glsl';
-import { Loader } from 'three';
 
 const stats = new Stats()
 stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -55,9 +51,9 @@ const treeRotation = {
 }
 
 const bushColor = {
-    shadow : '#1a223c',
-    mid: '#45a2a6',
-    highlight: '#bbe96e'
+    shadow : '#006969',
+    mid: '#00cf27',
+    highlight: '#9fff00'
 };
 
 bushLight.addBinding(
@@ -179,42 +175,11 @@ const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#ffffff");
 
-const axisHelper = new THREE.AxesHelper(2);
-scene.add(axisHelper);
-
-//Grid
-const GridMaterial = new THREE.ShaderMaterial({
-    transparent: true,
-    side: THREE.DoubleSide,
-    uniforms: {
-        uSize: new THREE.Uniform(1.0),
-        uThickness: new THREE.Uniform(1.5),
-        uFadeDistance: new THREE.Uniform(20.0),
-    },
-    vertexShader: GridVertexShader,
-    fragmentShader: GridFragmentShader
-})
-
-const gridPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    GridMaterial
-);
-gridPlane.rotation.x = - Math.PI * 0.5;
-scene.add(gridPlane);
-
-const grid = new THREE.GridHelper(
-  200,   // size
-  200,   // divisions
-  0x000000, // center line color
-  0xcccccc  // grid line color
-);
-scene.add(grid);
-
 //land
 const landGeometry = new THREE.PlaneGeometry(200, 200);
 const landMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#ffffff"),
-    roughness: 1.0,
+    roughness: 0.0,
     metalness: 0.0,
     side: THREE.DoubleSide
 });
@@ -270,9 +235,9 @@ const material = new THREE.ShaderMaterial({
         uTime: new THREE.Uniform(0.0),
         uLightDirection : new THREE.Uniform(lightDirection),
         uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
-        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow).convertSRGBToLinear()),
-        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid).convertSRGBToLinear()),
-        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight).convertSRGBToLinear()),
+        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
+        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
+        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight)),
 
         uSmallWindSpeed: new THREE.Uniform(bushWindParams.smallWindSpeed),
         uSmallWindScale: new THREE.Uniform(bushWindParams.smallWindScale),
@@ -291,9 +256,9 @@ const material = new THREE.ShaderMaterial({
 
 
 bushLight.on('change', ()=> {
-    material.uniforms.uShadowColor.value.set(bushColor.shadow).convertSRGBToLinear();
-    material.uniforms.uMidColor.value.set(bushColor.mid).convertSRGBToLinear();
-    material.uniforms.uHighlightColor.value.set(bushColor.highlight).convertSRGBToLinear();
+    material.uniforms.uShadowColor.value.set(bushColor.shadow);
+    material.uniforms.uMidColor.value.set(bushColor.mid);
+    material.uniforms.uHighlightColor.value.set(bushColor.highlight);
 })
 
 bushWind.on('change', ()=> {
@@ -305,9 +270,6 @@ bushWind.on('change', ()=> {
     material.uniforms.uLargeWindScale.value = bushWindParams.largeWindScale;
     material.uniforms.uLargeWindStrength.value = bushWindParams.largeWindStrength;
 });
-
-
-
 
 const createBush = ({
     position = new THREE.Vector3(),
@@ -322,7 +284,6 @@ const createBush = ({
     );
 
     instancedBush.position.copy(position);
-    // instancedBush.castShadow = true;
 
     const instanceNormals = new Float32Array(count * 3);
     const dummy = new THREE.Object3D();
@@ -351,6 +312,7 @@ const createBush = ({
     instancedBush.instanceMatrix.needsUpdate = true;
     instancedBush.castShadow = true;
     instancedBush.receiveShadow = true;
+    instancedBush.frustumCulled = false;
     scene.add(instancedBush);
     return instancedBush;
 }
@@ -383,34 +345,28 @@ const treeBounds = {
     zRange: 2.0
 };
 
-const leaf = await gltfLoader.loadAsync(
-    './Models/leaf.glb'
-);
+const leaf = await gltfLoader.loadAsync('./Models/leaf2.glb');
 const leafGeometry = leaf.scene.children[0].geometry;
-leafGeometry.scale(0.07, 0.07, 0.07);
-
-
 const fallingLeaves = new FallingLeavesSystem(
     scene,  
     leafGeometry,
-    treeBounds
+    treeBounds,
+    bushColor.highlight
 );
 
 
 //Branches
-const tree = await gltfLoader.loadAsync(
-    './Models/Branchescmp.glb'
-);
+const tree = await gltfLoader.loadAsync('./Models/Branchescmp.glb');
 const treeMesh = tree.scene.children[0];
 const treeMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#4a3018"),
+    color: new THREE.Color("#64401d"),
     roughness: 1.0,
     metalness: 0.0
 });
 treeMesh.material = treeMaterial;
 treeMesh.castShadow = true;
 treeMesh.scale.set(0.15, 0.15, 0.15);
-treeMesh.position.y = 0.125;
+treeMesh.position.y = 0.135;
 treeMesh.position.x = 0.0;
 treeMesh.rotation.y = treeRotation.rotation;
 scene.add(treeMesh);
@@ -468,16 +424,12 @@ const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.01,
 camera.position.set(0, 5, 30);
 scene.add(camera);
 
-function updateGrid(camera) {
-  gridPlane.position.x = Math.floor(camera.position.x);
-  gridPlane.position.z = Math.floor(camera.position.z);
-}
-
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-controls.minDistance = 25;
+controls.minDistance = 5;
 controls.maxDistance = 100;
+controls.maxPolarAngle = Math.PI / 1.807;
 controls.target.set(0, 5, 0);
 controls.panSpeed = 0.0
 
@@ -516,7 +468,6 @@ const tick = () =>
 
     // Render
     renderer.render(scene, camera);
-    updateGrid(camera);
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick);
