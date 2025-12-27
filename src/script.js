@@ -5,13 +5,14 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 import { TextureLoader } from 'three/src/loaders/TextureLoader.js';
 import { Pane } from 'tweakpane';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 
 import Stats from 'stats.js';
 
 import { FallingLeavesSystem } from './leaf.js';
 
-import BushVertexShader from './Shader/Bush/vertex.glsl';
-import BushFragmentShader from './Shader/Bush/fragment.glsl';
+import BushcsmVertexShader from './Shader/BushCSM/vertex.glsl';
+import BushcsmFragmentShader from './Shader/BushCSM/fragment.glsl';
 
 const stats = new Stats()
 stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -41,11 +42,6 @@ const treeBark = pane.addFolder({
     expanded: false
 });
 
-const debugLight = {
-    azimuth: 120,       //left-right
-    elevation: 60     //up-down
-};
-
 const treeRotation = {
     rotation : 4.75
 }
@@ -56,23 +52,6 @@ const bushColor = {
     highlight: '#9fff00'
 };
 
-bushLight.addBinding(
-    debugLight, 'azimuth', {
-        min: -180,
-        max: 180,
-        step: 1,
-        label: 'Light Azimuth (Left-Right)'
-    }
-);
-
-bushLight.addBinding(
-    debugLight, 'elevation', {
-        min: 0,
-        max: 90,
-        step: 1,
-        label: 'Light Elevation (Up-Down)'
-    }
-);
 
 const bushWindParams = {
     smallWindSpeed: 0.25,
@@ -154,19 +133,6 @@ treeBark.addBinding(
     }
 );
 
-const lightDirection = new THREE.Vector3();
-
-const updateLightDirection = () => {
-    const az = THREE.MathUtils.degToRad(debugLight.azimuth);
-    const el = THREE.MathUtils.degToRad(debugLight.elevation);
-
-    lightDirection.set(
-        Math.cos(el) * Math.cos(az),
-        Math.sin(el),
-        Math.cos(el) * Math.sin(az)
-    ).normalize();
-}
-
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -175,12 +141,32 @@ const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#ffffff");
 
+//lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
+directionalLight.position.set(-50, 30, 50);
+directionalLight.castShadow = true;
+directionalLight.shadow.radius = 3;
+directionalLight.shadow.mapSize.set(1024, 1024);
+
+const d = 100;
+directionalLight.shadow.camera.left = -d;
+directionalLight.shadow.camera.right = d;
+directionalLight.shadow.camera.top = d;
+directionalLight.shadow.camera.bottom = -d;
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 100;
+directionalLight.shadow.bias = -0.001;
+directionalLight.shadow.normalBias = 0.01;
+
+const lightDirection = new THREE.Vector3().subVectors(directionalLight.target.position, directionalLight.position).normalize(); //for fragment shader
+scene.add(directionalLight);
+
 //land
 const landGeometry = new THREE.PlaneGeometry(200, 200);
 const landMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#ffffff"),
-    roughness: 0.0,
-    metalness: 0.0,
     side: THREE.DoubleSide
 });
 const landMesh = new THREE.Mesh(landGeometry, landMaterial);
@@ -229,8 +215,10 @@ const planeGeometry = new THREE.PlaneGeometry(1, 1);
 const textureLoader = new TextureLoader();
 const leaveAlphaTexture = await textureLoader.loadAsync('./Textures/Leave_alpha.png');
 
-const material = new THREE.ShaderMaterial({
-    side: THREE.DoubleSide,
+const materialcsm = new CustomShaderMaterial({
+    baseMaterial: THREE.MeshStandardMaterial,
+    vertexShader: BushcsmVertexShader,
+    fragmentShader: BushcsmFragmentShader,
     uniforms: {
         uTime: new THREE.Uniform(0.0),
         uLightDirection : new THREE.Uniform(lightDirection),
@@ -247,28 +235,52 @@ const material = new THREE.ShaderMaterial({
         uLargeWindScale: new THREE.Uniform(bushWindParams.largeWindScale),
         uLargeWindStrength: new THREE.Uniform(bushWindParams.largeWindStrength),
     },
-    vertexShader: BushVertexShader,
-    fragmentShader: BushFragmentShader,
+
     depthTest: true,
     depthWrite: true,
     transparent: false,
+    side: THREE.DoubleSide,
+});
+
+const depthMaterialcsm = new CustomShaderMaterial({
+    baseMaterial: THREE.MeshDepthMaterial,
+    vertexShader: BushcsmVertexShader,
+    uniforms: {
+        uTime: new THREE.Uniform(0.0),
+        uLightDirection : new THREE.Uniform(lightDirection),
+        uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
+        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
+        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
+        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight)),
+
+        uSmallWindSpeed: new THREE.Uniform(bushWindParams.smallWindSpeed),
+        uSmallWindScale: new THREE.Uniform(bushWindParams.smallWindScale),
+        uSmallWindStrength: new THREE.Uniform(bushWindParams.smallWindStrength),
+
+        uLargeWindSpeed: new THREE.Uniform(bushWindParams.largeWindSpeed),
+        uLargeWindScale: new THREE.Uniform(bushWindParams.largeWindScale),
+        uLargeWindStrength: new THREE.Uniform(bushWindParams.largeWindStrength),
+    },
+
+    depthPacking: THREE.RGBADepthPacking,
+});
+
+bushLight.on('change', ()=> {
+    materialcsm.uniforms.uShadowColor.value = new THREE.Color(bushColor.shadow);
+    materialcsm.uniforms.uMidColor.value = new THREE.Color(bushColor.mid);
+    materialcsm.uniforms.uHighlightColor.value = new THREE.Color(bushColor.highlight);
 });
 
 
-bushLight.on('change', ()=> {
-    material.uniforms.uShadowColor.value.set(bushColor.shadow);
-    material.uniforms.uMidColor.value.set(bushColor.mid);
-    material.uniforms.uHighlightColor.value.set(bushColor.highlight);
-})
 
 bushWind.on('change', ()=> {
-    material.uniforms.uSmallWindSpeed.value = bushWindParams.smallWindSpeed;
-    material.uniforms.uSmallWindScale.value = bushWindParams.smallWindScale;
-    material.uniforms.uSmallWindStrength.value = bushWindParams.smallWindStrength;
+    materialcsm.uniforms.uSmallWindSpeed.value = bushWindParams.smallWindSpeed;
+    materialcsm.uniforms.uSmallWindScale.value = bushWindParams.smallWindScale;
+    materialcsm.uniforms.uSmallWindStrength.value = bushWindParams.smallWindStrength;
 
-    material.uniforms.uLargeWindSpeed.value = bushWindParams.largeWindSpeed;
-    material.uniforms.uLargeWindScale.value = bushWindParams.largeWindScale;
-    material.uniforms.uLargeWindStrength.value = bushWindParams.largeWindStrength;
+    materialcsm.uniforms.uLargeWindSpeed.value = bushWindParams.largeWindSpeed;
+    materialcsm.uniforms.uLargeWindScale.value = bushWindParams.largeWindScale;
+    materialcsm.uniforms.uLargeWindStrength.value = bushWindParams.largeWindStrength;
 });
 
 const createBush = ({
@@ -279,7 +291,7 @@ const createBush = ({
 
     const instancedBush = new THREE.InstancedMesh(
         planeGeometry, 
-        material, 
+        materialcsm, 
         leafCount
     );
 
@@ -309,15 +321,17 @@ const createBush = ({
         'instanceNormal',
         new THREE.InstancedBufferAttribute(instanceNormals, 3)
     );
+    
     instancedBush.instanceMatrix.needsUpdate = true;
     instancedBush.castShadow = true;
     instancedBush.receiveShadow = true;
     instancedBush.frustumCulled = false;
+    instancedBush.customDepthMaterial = depthMaterialcsm;
     scene.add(instancedBush);
     return instancedBush;
 }
 //Dummy bush for testing shaders
-// createBush({ position: new THREE.Vector3( 0, 2,  0.00), leafCount: 25, scale: 1.5});
+// createBush({ position: new THREE.Vector3( -2.0, 5,  5.00), leafCount: 25, scale: 1.0});
 
 createBush({ position: new THREE.Vector3( 1.25, 2.25,  0.00), leafCount: 15, scale: 1.0});
 createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.20), leafCount: 25, scale: 0.8});
@@ -334,6 +348,7 @@ createBush({ position: new THREE.Vector3(-1.50, 6.00,  0.50), leafCount: 15, sca
 createBush({ position: new THREE.Vector3( 0.50, 7.00,  0.50), leafCount: 15, scale: 0.7});
 createBush({ position: new THREE.Vector3(-0.50, 7.00, -0.50), leafCount: 10, scale: 0.7});
 createBush({ position: new THREE.Vector3( 0.00, 8.00,  0.50), leafCount: 15, scale: 1.0});
+
 
 
 
@@ -372,27 +387,6 @@ treeMesh.rotation.y = treeRotation.rotation;
 scene.add(treeMesh);
 
 
-//lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
-directionalLight.position.set(-15, 15, 7);
-directionalLight.castShadow = true;
-directionalLight.shadow.radius = 15;
-directionalLight.shadow.mapSize.set(1024, 1024);
-
-const d = 50;
-directionalLight.shadow.camera.left = -d;
-directionalLight.shadow.camera.right = d;
-directionalLight.shadow.camera.top = d;
-directionalLight.shadow.camera.bottom = -d;
-directionalLight.shadow.camera.near = 1;
-directionalLight.shadow.camera.far = 100;
-directionalLight.shadow.bias = -0.0001;
-directionalLight.shadow.normalBias = 0.03;
-
-scene.add(directionalLight);
-
 /**
  * Sizes
  */
@@ -421,7 +415,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.01, 1000);
-camera.position.set(0, 5, 30);
+camera.position.set(0, 5, 15);
 scene.add(camera);
 
 // Controls
@@ -443,6 +437,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.physicallyCorrectLights = true;
 
 
 /**
@@ -455,9 +450,7 @@ const tick = () =>
     stats.begin();
     const elapsedTime = clock.getElapsedTime();
 
-    updateLightDirection();
-    material.uniforms.uLightDirection.value.copy(lightDirection);
-    material.uniforms.uTime.value = elapsedTime;
+    materialcsm.uniforms.uTime.value = elapsedTime;
 
     treeMesh.rotation.y = treeRotation.rotation;
 
