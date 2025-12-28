@@ -21,9 +21,9 @@ void main(){
     ndl = max(ndl, 0.0);
     vec3 color = vec3(1.0);
     if(ndl < 0.5){
-        color = mix(uShadowColor, uMidColor, ndl * 2.0);
+        color = mix(uHighlightColor, uMidColor, ndl * 2.0);
     } else {
-        color = mix(uMidColor, uHighlightColor, (ndl - 0.5) * 2.0);
+        color = mix(uMidColor, uShadowColor, (ndl - 0.5) * 2.0);
     }
     
     csm_DiffuseColor = vec4(color,1.0);

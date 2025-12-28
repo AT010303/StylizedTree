@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export class FallingLeavesSystem {
     constructor(scene, geometry, bounds, color) {
-        this.count = 20; // density
+        this.count = 10; // density
         this.scene = scene;
         this.bounds = bounds; // leaves spawn area {yMin, yMax, xRange, zRange}
         

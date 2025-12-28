@@ -43,13 +43,13 @@ const treeBark = pane.addFolder({
 });
 
 const treeRotation = {
-    rotation : 4.75
+    rotation: 4.75
 }
 
 const bushColor = {
-    shadow : '#006969',
-    mid: '#00cf27',
-    highlight: '#9fff00'
+    shadow: '#075356',
+    mid: '#2ccc36',
+    highlight: '#aadb33'
 };
 
 
@@ -64,54 +64,54 @@ const bushWindParams = {
 
 bushWind.addBinding(
     bushWindParams, 'smallWindSpeed', {
-        min: 0.0,
-        max: 1.0,
-        step: 0.01,
-        label: 'Small Wind Speed'
-    }
+    min: 0.0,
+    max: 1.0,
+    step: 0.01,
+    label: 'Small Wind Speed'
+}
 );
 bushWind.addBinding(
     bushWindParams, 'smallWindScale', {
-        min: 0.0,
-        max: 20.0,
-        step: 0.1,
-        label: 'Small Wind Scale'
-    }
+    min: 0.0,
+    max: 20.0,
+    step: 0.1,
+    label: 'Small Wind Scale'
+}
 );
 
 bushWind.addBinding(
     bushWindParams, 'smallWindStrength', {
-        min: 0.0,
-        max: 5.0,
-        step: 0.1,
-        label: 'Small Wind Strength'
-    }
+    min: 0.0,
+    max: 5.0,
+    step: 0.1,
+    label: 'Small Wind Strength'
+}
 );
 
 bushWind.addBinding(
     bushWindParams, 'largeWindSpeed', {
-        min: 0.0,
-        max: 1.0,
-        step: 0.01,
-        label: 'Large Wind Speed'
-    }
+    min: 0.0,
+    max: 1.0,
+    step: 0.01,
+    label: 'Large Wind Speed'
+}
 );
 bushWind.addBinding(
     bushWindParams, 'largeWindScale', {
-        min: 0.0,
-        max: 5.0,
-        step: 0.1,
-        label: 'Large Wind Scale'
-    }
+    min: 0.0,
+    max: 5.0,
+    step: 0.1,
+    label: 'Large Wind Scale'
+}
 );
 
 bushWind.addBinding(
     bushWindParams, 'largeWindStrength', {
-        min: 0.0,
-        max: 2.0,
-        step: 0.1,
-        label: 'Large Wind Strength'
-    }
+    min: 0.0,
+    max: 2.0,
+    step: 0.1,
+    label: 'Large Wind Strength'
+}
 );
 
 bushLight.addBinding(
@@ -126,11 +126,11 @@ bushLight.addBinding(
 
 treeBark.addBinding(
     treeRotation, 'rotation', {
-        min: 0,
-        max: Math.PI * 2,
-        step: 0.01,
-        label: 'Tree Rotation'
-    }
+    min: 0,
+    max: Math.PI * 2,
+    step: 0.01,
+    label: 'Tree Rotation'
+}
 );
 
 
@@ -142,7 +142,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color("#ffffff");
 
 //lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+const ambientLight = new THREE.AmbientLight('#ffffff', 2, 0);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
 directionalLight.position.set(-35, 20, 25);
@@ -155,10 +155,10 @@ directionalLight.shadow.camera.left = -d;
 directionalLight.shadow.camera.right = d;
 directionalLight.shadow.camera.top = d;
 directionalLight.shadow.camera.bottom = -d;
-directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.near = 0.001;
 directionalLight.shadow.camera.far = 100;
 directionalLight.shadow.bias = -0.001;
-directionalLight.shadow.normalBias = 0.01;
+directionalLight.shadow.normalBias = 0.001;
 
 const lightDirection = new THREE.Vector3().subVectors(directionalLight.target.position, directionalLight.position).normalize(); //for fragment shader
 scene.add(directionalLight);
@@ -221,7 +221,7 @@ const materialcsm = new CustomShaderMaterial({
     fragmentShader: BushcsmFragmentShader,
     uniforms: {
         uTime: new THREE.Uniform(0.0),
-        uLightDirection : new THREE.Uniform(lightDirection),
+        uLightDirection: new THREE.Uniform(lightDirection),
         uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
         uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
         uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
@@ -273,15 +273,13 @@ const depthMaterialcsm = new CustomShaderMaterial({
     depthPacking: THREE.RGBADepthPacking,
 });
 
-bushLight.on('change', ()=> {
+bushLight.on('change', () => {
     materialcsm.uniforms.uShadowColor.value = new THREE.Color(bushColor.shadow);
     materialcsm.uniforms.uMidColor.value = new THREE.Color(bushColor.mid);
     materialcsm.uniforms.uHighlightColor.value = new THREE.Color(bushColor.highlight);
 });
 
-
-
-bushWind.on('change', ()=> {
+bushWind.on('change', () => {
     materialcsm.uniforms.uSmallWindSpeed.value = bushWindParams.smallWindSpeed;
     materialcsm.uniforms.uSmallWindScale.value = bushWindParams.smallWindScale;
     materialcsm.uniforms.uSmallWindStrength.value = bushWindParams.smallWindStrength;
@@ -298,8 +296,8 @@ const createBush = ({
 }) => {
 
     const instancedBush = new THREE.InstancedMesh(
-        planeGeometry, 
-        materialcsm, 
+        planeGeometry,
+        materialcsm,
         leafCount
     );
 
@@ -310,7 +308,7 @@ const createBush = ({
     const positionL = new THREE.Vector3();
     const normal = new THREE.Vector3();
 
-    for(let i=0; i<leafCount; i++){
+    for (let i = 0; i < leafCount; i++) {
         sampler.sample(positionL, normal);
 
         dummy.position.copy(positionL).add(position);
@@ -329,7 +327,7 @@ const createBush = ({
         'instanceNormal',
         new THREE.InstancedBufferAttribute(instanceNormals, 3)
     );
-    
+
     instancedBush.instanceMatrix.needsUpdate = true;
     instancedBush.castShadow = true;
     instancedBush.receiveShadow = true;
@@ -342,24 +340,34 @@ const createBush = ({
 //Dummy bush for testing shaders
 // createBush({ position: new THREE.Vector3( -1.00, 4.00,  1.00), leafCount: 26, scale: 1.0});
 
-createBush({ position: new THREE.Vector3( 1.25, 2.25,  0.00), leafCount: 15, scale: 1.0});
-createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.20), leafCount: 25, scale: 0.8});
-createBush({ position: new THREE.Vector3( 0.25, 3.00,  0.00), leafCount: 20, scale: 1.2});
-createBush({ position: new THREE.Vector3(-1.00, 4.00,  1.00), leafCount: 30, scale: 1.0});
-createBush({ position: new THREE.Vector3( 1.00, 4.00,  0.00), leafCount: 20, scale: 0.8});
-createBush({ position: new THREE.Vector3( 2.00, 4.00, -0.50), leafCount: 25, scale: 1.0});
-createBush({ position: new THREE.Vector3(-2.00, 4.00,  0.50), leafCount: 25, scale: 1.2});
-createBush({ position: new THREE.Vector3(-1.00, 5.00, -0.50), leafCount: 10, scale: 1.0});
-createBush({ position: new THREE.Vector3( 1.00, 5.00,  0.50), leafCount: 20, scale: 0.6});
-createBush({ position: new THREE.Vector3( 0.00, 6.00,  0.50), leafCount: 15, scale: 1.0});
-createBush({ position: new THREE.Vector3( 1.50, 6.00,  0.50), leafCount: 20, scale: 0.8});
-createBush({ position: new THREE.Vector3(-1.50, 6.00,  0.50), leafCount: 15, scale: 1.0});
-createBush({ position: new THREE.Vector3( 0.50, 7.00,  0.50), leafCount: 15, scale: 0.7});
-createBush({ position: new THREE.Vector3(-0.50, 7.00, -0.50), leafCount: 10, scale: 0.7});
-createBush({ position: new THREE.Vector3( 0.00, 8.00,  0.50), leafCount: 15, scale: 1.0});
+createBush({ position: new THREE.Vector3(1.25, 2.25, 0.00), leafCount: 10, scale: 1.0 });
 
+createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.50), leafCount: 20, scale: 0.8 });
+createBush({ position: new THREE.Vector3(-1.80, 2.35, 0.50), leafCount: 20, scale: 0.8 });
 
+createBush({ position: new THREE.Vector3(0.25, 3.00, 0.00), leafCount: 15, scale: 1.2 });
+createBush({ position: new THREE.Vector3(0.25, 3.00, -0.75), leafCount: 15, scale: 1.2 });
 
+createBush({ position: new THREE.Vector3(-1.00, 4.00, 1.00), leafCount: 20, scale: 1.0 });
+createBush({ position: new THREE.Vector3(-1.00, 4.00, -1.00), leafCount: 20, scale: 1.0 });
+createBush({ position: new THREE.Vector3(1.00, 4.00, 0.00), leafCount: 15, scale: 0.8 });
+createBush({ position: new THREE.Vector3(2.00, 4.00, -0.50), leafCount: 20, scale: 1.0 });
+createBush({ position: new THREE.Vector3(-2.00, 4.00, 0.50), leafCount: 20, scale: 1.2 });
+
+createBush({ position: new THREE.Vector3(-1.00, 5.00, -1.50), leafCount: 6, scale: 1.0 });
+createBush({ position: new THREE.Vector3(1.00, 5.00, 1.50), leafCount: 15, scale: 0.6 });
+createBush({ position: new THREE.Vector3(0.00, 5.00, -1.0), leafCount: 10, scale: 0.6 });
+
+createBush({ position: new THREE.Vector3(0.00, 6.00, 0.50), leafCount: 10, scale: 1.0 });
+createBush({ position: new THREE.Vector3(1.50, 6.00, 0.50), leafCount: 15, scale: 0.8 });
+createBush({ position: new THREE.Vector3(1.50, 6.00, -0.50), leafCount: 15, scale: 0.8 });
+createBush({ position: new THREE.Vector3(-1.50, 6.00, 0.50), leafCount: 10, scale: 1.0 });
+createBush({ position: new THREE.Vector3(-1.50, 6.00, -0.75), leafCount: 7, scale: 1.0 });
+
+createBush({ position: new THREE.Vector3(0.50, 6.50, 0.50), leafCount: 15, scale: 0.7 });
+createBush({ position: new THREE.Vector3(-0.50, 7.00, -0.50), leafCount: 10, scale: 0.7 });
+
+createBush({ position: new THREE.Vector3(0.00, 8.00, 0.00), leafCount: 25, scale: 1.0 });
 
 //leafs
 const treeBounds = {
@@ -372,12 +380,11 @@ const treeBounds = {
 const leaf = await gltfLoader.loadAsync('./Models/leaf2.glb');
 const leafGeometry = leaf.scene.children[0].geometry;
 const fallingLeaves = new FallingLeavesSystem(
-    scene,  
+    scene,
     leafGeometry,
     treeBounds,
     bushColor.highlight
 );
-
 
 //Branches
 const tree = await gltfLoader.loadAsync('./Models/Branchescmp.glb');
@@ -404,8 +411,7 @@ const sizes = {
     height: window.innerHeight
 };
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth;
     sizes.height = window.innerHeight;
@@ -438,7 +444,7 @@ controls.panSpeed = 0.0
 
 /**
  * Renderer
- */ 
+ */
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 });
@@ -448,14 +454,12 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.VSMShadowMap;
 renderer.physicallyCorrectLights = true;
 
-
 /**
  * Animate
  */
 const clock = new THREE.Clock();
 
-const tick = () =>
-{
+const tick = () => {
     stats.begin();
     const elapsedTime = clock.getElapsedTime();
 
@@ -464,7 +468,7 @@ const tick = () =>
 
     treeMesh.rotation.y = treeRotation.rotation;
 
-    if(fallingLeaves) fallingLeaves.update(0.01); // Fixed timestep for leafe scale consistency
+    if (fallingLeaves) fallingLeaves.update(0.005); // Fixed timestep for leafe scale consistency
 
     // Update controls
     controls.update();
