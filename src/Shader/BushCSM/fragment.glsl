@@ -9,21 +9,21 @@ uniform vec3 uHighlightColor;
 
 void main(){
     float alpha = texture2D(uAlphaMap, vUv).r;
-    float a = smoothstep(0.4, 0.6, alpha);
-    if(a < 0.001){
+    float a = smoothstep(0.5, 0.6, alpha);
+    if(a < 0.01){
         discard;
     }
 
     vec3 surfaceNormal = normalize(vInstanceNormal);
     vec3 LightDirection = normalize(uLightDirection);
     float ndl = dot(surfaceNormal, LightDirection);
-    ndl = ndl * 0.5 + 0.5; // remap from [-1,1] to [0,1]
-
-    vec3 color = vec3(0.0);
+    ndl = (ndl + 1.0) * 0.5;
+    ndl = max(ndl, 0.0);
+    vec3 color = vec3(1.0);
     if(ndl < 0.5){
-        color = mix(uHighlightColor, uMidColor, ndl * 2.0);
+        color = mix(uShadowColor, uMidColor, ndl * 2.0);
     } else {
-        color = mix(uMidColor, uShadowColor, (ndl - 0.5) * 2.0);
+        color = mix(uMidColor, uHighlightColor, (ndl - 0.5) * 2.0);
     }
     
     csm_DiffuseColor = vec4(color,1.0);

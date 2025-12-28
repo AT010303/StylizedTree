@@ -9,6 +9,9 @@ export class FallingLeavesSystem {
 
         this.material = new THREE.MeshStandardMaterial({
             color: new THREE.Color(color),
+            side: THREE.DoubleSide,
+            roughness: 0.8,
+            metalness: 0.2,
         });
 
         this.mesh = new THREE.InstancedMesh(geometry, this.material, this.count);
@@ -42,9 +45,9 @@ export class FallingLeavesSystem {
 
         // Reset velocity (falling down, drifting slightly)
         p.vel.set(
-            (Math.random() + 0.25) * 0.05,  // X drift
-            -(Math.random() * 0.01 + 0.02), // Y Fall speed
-            (Math.random() - 0.2 ) * 0.05   // Z drift
+            (Math.random() + 0.25) * 0.01,  // X drift
+            -(Math.random() * 0.005 + 0.011), // Y Fall speed
+            (Math.random() - 0.2 ) * 0.01   // Z drift
         );
 
         // Random spin

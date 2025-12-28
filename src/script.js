@@ -144,8 +144,8 @@ scene.background = new THREE.Color("#ffffff");
 //lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
-directionalLight.position.set(-15, 10, 15);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+directionalLight.position.set(-35, 20, 25);
 directionalLight.castShadow = true;
 // directionalLight.shadow.radius = 3;
 directionalLight.shadow.mapSize.set(1024, 1024);
@@ -248,6 +248,7 @@ varying vec2 vUv;
 uniform sampler2D uAlphaMap;
 void main() {
     float a = texture2D(uAlphaMap, vUv).r;
+    a = smoothstep(0.5, 0.6, a);
     // same threshold as main alphaTest
     if (a < 0.8) discard;
 }
@@ -339,7 +340,7 @@ const createBush = ({
     return instancedBush;
 }
 //Dummy bush for testing shaders
-// createBush({ position: new THREE.Vector3( -2.0, 5,  5.00), leafCount: 25, scale: 1.0});
+// createBush({ position: new THREE.Vector3( -1.00, 4.00,  1.00), leafCount: 26, scale: 1.0});
 
 createBush({ position: new THREE.Vector3( 1.25, 2.25,  0.00), leafCount: 15, scale: 1.0});
 createBush({ position: new THREE.Vector3(-1.80, 2.35, -0.20), leafCount: 25, scale: 0.8});
@@ -364,7 +365,7 @@ createBush({ position: new THREE.Vector3( 0.00, 8.00,  0.50), leafCount: 15, sca
 const treeBounds = {
     yMin: 1.0,
     yMax: 7.5,   // The highest bush is around
-    xRange: 6.0, // Spans from -3 to 3 roughly
+    xRange: 5.0, // Spans from -3 to 3 roughly
     zRange: 2.0
 };
 
