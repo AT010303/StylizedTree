@@ -262,7 +262,7 @@ let count = 25;
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
 // Material
 const textureLoader = new TextureLoader();
-const leaveAlphaTexture = await textureLoader.loadAsync('./Textures/Leave_alpha.png');
+const leaveAlphaTexture = await textureLoader.loadAsync('./Textures/leaves_alpha_map_256x256.png');
 
 const material = new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
@@ -287,7 +287,30 @@ const material = new THREE.ShaderMaterial({
     depthTest: true,
     depthWrite: true,
     transparent: false,
+    alphaTest: 0.8
 });
+
+const depthUniforms = THREE.UniformsUtils.clone(material.uniforms);
+
+const depthFragment = `#include <packing>
+varying vec2 vUv;
+uniform sampler2D uAlphaMap;
+void main() {
+  float a = texture2D(uAlphaMap, vUv).a;
+  // same threshold as main alphaTest
+  if (a < 0.8) discard;
+  gl_FragColor = packDepthToRGBA( gl_FragCoord.z );
+}
+`;
+
+const depthMaterial = new THREE.ShaderMaterial({
+  vertexShader: BushVertexShader,
+  fragmentShader: depthFragment,
+  uniforms: depthUniforms,
+  defines: { USE_INSTANCING: '' },
+  side: THREE.DoubleSide,
+});
+
 
 
 bushLight.on('change', ()=> {
@@ -314,17 +337,20 @@ const createBush = ({
     leafCount = 25,
     scale = 1.0
 }) => {
+    const bushGeometry = planeGeometry.clone();
 
     const instancedBush = new THREE.InstancedMesh(
-        planeGeometry, 
+        bushGeometry, 
         material, 
         leafCount
     );
 
+    instancedBush.customDepthMaterial = depthMaterial;
+    instancedBush.customDistanceMaterial = depthMaterial;
     instancedBush.position.copy(position);
-    // instancedBush.castShadow = true;
+    instancedBush.castShadow = true;
 
-    const instanceNormals = new Float32Array(count * 3);
+    const instanceNormals = new Float32Array(leafCount * 3);
     const dummy = new THREE.Object3D();
     const positionL = new THREE.Vector3();
     const normal = new THREE.Vector3();
@@ -348,6 +374,7 @@ const createBush = ({
         'instanceNormal',
         new THREE.InstancedBufferAttribute(instanceNormals, 3)
     );
+    
     instancedBush.instanceMatrix.needsUpdate = true;
     instancedBush.castShadow = true;
     instancedBush.receiveShadow = true;
@@ -420,12 +447,11 @@ scene.add(treeMesh);
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
-directionalLight.position.set(-15, 15, 7);
+directionalLight.position.set(-8, 8, 8);
 directionalLight.castShadow = true;
-directionalLight.shadow.radius = 15;
 directionalLight.shadow.mapSize.set(1024, 1024);
 
-const d = 50;
+const d = 10;
 directionalLight.shadow.camera.left = -d;
 directionalLight.shadow.camera.right = d;
 directionalLight.shadow.camera.top = d;
@@ -506,6 +532,10 @@ const tick = () =>
     updateLightDirection();
     material.uniforms.uLightDirection.value.copy(lightDirection);
     material.uniforms.uTime.value = elapsedTime;
+
+    if (depthMaterial && depthMaterial.uniforms && depthMaterial.uniforms.uTime) {
+        depthMaterial.uniforms.uTime.value = elapsedTime;
+    }
 
     treeMesh.rotation.y = treeRotation.rotation;
 
