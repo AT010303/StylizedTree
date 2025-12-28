@@ -145,12 +145,12 @@ scene.background = new THREE.Color("#ffffff");
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
-directionalLight.position.set(-50, 30, 50);
+directionalLight.position.set(-15, 10, 15);
 directionalLight.castShadow = true;
-directionalLight.shadow.radius = 3;
+// directionalLight.shadow.radius = 3;
 directionalLight.shadow.mapSize.set(1024, 1024);
 
-const d = 100;
+const d = 10;
 directionalLight.shadow.camera.left = -d;
 directionalLight.shadow.camera.right = d;
 directionalLight.shadow.camera.top = d;
@@ -239,19 +239,27 @@ const materialcsm = new CustomShaderMaterial({
     depthTest: true,
     depthWrite: true,
     transparent: false,
+    alphaTest: 0.8,
     side: THREE.DoubleSide,
 });
+
+const depthFragment = `
+varying vec2 vUv;
+uniform sampler2D uAlphaMap;
+void main() {
+    float a = texture2D(uAlphaMap, vUv).r;
+    // same threshold as main alphaTest
+    if (a < 0.8) discard;
+}
+`;
 
 const depthMaterialcsm = new CustomShaderMaterial({
     baseMaterial: THREE.MeshDepthMaterial,
     vertexShader: BushcsmVertexShader,
+    fragmentShader: depthFragment,
     uniforms: {
         uTime: new THREE.Uniform(0.0),
-        uLightDirection : new THREE.Uniform(lightDirection),
         uAlphaMap: new THREE.Uniform(leaveAlphaTexture),
-        uShadowColor: new THREE.Uniform(new THREE.Color(bushColor.shadow)),
-        uMidColor: new THREE.Uniform(new THREE.Color(bushColor.mid)),
-        uHighlightColor: new THREE.Uniform(new THREE.Color(bushColor.highlight)),
 
         uSmallWindSpeed: new THREE.Uniform(bushWindParams.smallWindSpeed),
         uSmallWindScale: new THREE.Uniform(bushWindParams.smallWindScale),
@@ -261,7 +269,6 @@ const depthMaterialcsm = new CustomShaderMaterial({
         uLargeWindScale: new THREE.Uniform(bushWindParams.largeWindScale),
         uLargeWindStrength: new THREE.Uniform(bushWindParams.largeWindStrength),
     },
-
     depthPacking: THREE.RGBADepthPacking,
 });
 
@@ -327,6 +334,7 @@ const createBush = ({
     instancedBush.receiveShadow = true;
     instancedBush.frustumCulled = false;
     instancedBush.customDepthMaterial = depthMaterialcsm;
+    instancedBush.customDistanceMaterial = depthMaterialcsm;
     scene.add(instancedBush);
     return instancedBush;
 }
@@ -451,6 +459,7 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime();
 
     materialcsm.uniforms.uTime.value = elapsedTime;
+    depthMaterialcsm.uniforms.uTime.value = elapsedTime;
 
     treeMesh.rotation.y = treeRotation.rotation;
 

@@ -26,6 +26,5 @@ void main(){
         color = mix(uMidColor, uShadowColor, (ndl - 0.5) * 2.0);
     }
     
-    
     csm_DiffuseColor = vec4(color,1.0);
 }
