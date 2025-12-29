@@ -101,7 +101,7 @@ void main(){
         + (cameraUp * position.y * scaleY)
         + windOffset;
 
-    csm_Normal = instanceNormal;
+    // csm_Normal = instanceNormal;
     csm_PositionRaw = projectionMatrix * viewMatrix * vec4(billboardVertexPosition, 1.0);
 
     vInstanceNormal = instanceNormal;

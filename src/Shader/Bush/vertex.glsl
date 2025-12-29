@@ -103,7 +103,6 @@ void main(){
         + (cameraUp * position.y * scaleY)
         + windOffset;
 
-
     gl_Position = projectionMatrix * viewMatrix * vec4(billboardVertexPosition, 1.0);
 
     vInstanceNormal = instanceNormal;
